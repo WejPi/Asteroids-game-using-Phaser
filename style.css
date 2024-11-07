@@ -1,1 +1,8 @@
-body{background-color: darkblue;}
+body{
+    background-color: darkblue;
+}
+canvas{
+    display: block;
+    margin:auto;
+    margin-top:45px
+}
