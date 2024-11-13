@@ -5,7 +5,6 @@ var config = {
     physics:{
         default: "arcade",
         arcade:{
-            //gravity:{y: 5},
             debug:false
         }
     },
@@ -47,9 +46,14 @@ function create(){
     Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     for(let i=0;i<5;i++){
-        asteroid = this.physics.add.sprite(Phaser.Math.Between(0,config.width),Phaser.Math.Between(0,config.height),"asteroid").setScale(0.07,0.07)
+        asteroid = this.physics.add.sprite(Phaser.Math.Between(0,config.width),Phaser.Math.Between(0,config.height),"asteroid").setScale(0.07,0.07);
         asteroid.body.collideWorldBounds = true;
-        asteroidsGroup.add(asteroid);
+        distance = Phaser.Math.Distance.Between(asteroid.x,asteroid.y,player.x,player.y);
+        if(distance<100){
+            asteroid.destroy();
+        }else{
+            asteroidsGroup.add(asteroid)
+        }
     }
 
     this.physics.add.collider(player,asteroidsGroup,function(){
@@ -77,11 +81,24 @@ function update(){
             player.setAcceleration(0);
         }
         if(Space.isDown){
-            console.log("Pew!");
+            addBullet(this,player);
         }
     }else{
             gameEnd = true;
             this.add.image(player.x,player.y,"explosion").setScale(0.3,0.3);
             player.destroy();
     }
+}
+
+function addBullet(scene,player){
+    spaceshipAngle = Phaser.Math.DegToRad(player.angle)
+    spaceshipHeight = player.displayHeight;
+    spaceshipWidth = player.displayWidth;
+
+    bulletOffsetX = Math.cos(spaceshipAngle)*(spaceshipHeight/2);
+    bulletOffsetY = Math.sin(spaceshipAngle)*(spaceshipWidth/2);
+    
+    bullet = scene.physics.add.sprite(player.x + bulletOffsetX,player.y + bulletOffsetY,"bullet").setScale(0.2,0.2);
+    bullet.rotation = player.rotation;
+    bullet.setVelocity(Math.cos(player.rotation)*400,Math.sin(player.rotation)*400);
 }
