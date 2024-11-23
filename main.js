@@ -16,9 +16,7 @@ var config = {
 };
 
 
-
 var game = new Phaser.Game(config);
-
 
 
 function preload(){
@@ -30,11 +28,12 @@ function preload(){
 }
 
 
-
 function create(){
     this.add.image(config.width/2,config.height/2,"space");
     player = this.physics.add.sprite(config.width/2,config.height-100,"spaceship").setScale(0.15,0.15);
     asteroidsGroup = this.add.group();
+    canFire = true;
+    asteroidSpeed = 80;
 
     player.body.collideWorldBounds = true;
     gameEnd = false;
@@ -45,18 +44,16 @@ function create(){
     keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    for(let i=0;i<5;i++){
-        asteroid = this.physics.add.sprite(Phaser.Math.Between(0,config.width),Phaser.Math.Between(0,config.height),"asteroid").setScale(0.07,0.07);
-        asteroid.body.collideWorldBounds = true;
-        distance = Phaser.Math.Distance.Between(asteroid.x,asteroid.y,player.x,player.y);
-        if(distance<100){
-            asteroid.destroy();
-        }else{
-            asteroidsGroup.add(asteroid)
-        }
-    }
+    setInterval(()=>{
+        addAsteroids(this);
+    },1000);
 
-    this.physics.add.collider(player,asteroidsGroup,function(){
+    this.physics.add.collider(player,asteroidsGroup,(player,asteroid)=>{
+        asteroid.destroy();
+        explosion = this.add.image(asteroid.x,asteroid.y,"explosion").setScale(0.07,0.07);
+        this.time.delayedCall(1000,()=>{
+            explosion.destroy();
+        })
         gameEnd = true;
     })
     this.physics.add.collider(asteroidsGroup,asteroidsGroup)
@@ -80,14 +77,41 @@ function update(){
         }else{
             player.setAcceleration(0);
         }
-        if(Space.isDown){
+        if(Space.isDown && canFire){
             addBullet(this,player);
+            canFire = false;
+            this.time.delayedCall(200,()=>{canFire = true});
         }
     }else{
             gameEnd = true;
             this.add.image(player.x,player.y,"explosion").setScale(0.3,0.3);
             player.destroy();
     }
+
+    asteroidsGroup.getChildren().forEach((asteroid) => {
+        if(asteroid.x < -50 || asteroid.x > config.width + 50 || asteroid.y < -50 || asteroid.y > config.height + 50){
+            asteroid.destroy();
+        }
+    })
+}
+
+function addAsteroids(scene){
+    spawnPlace = Phaser.Math.Between(0,3);
+    if(spawnPlace == 0){
+        asteroid = scene.physics.add.sprite(Phaser.Math.Between(0,config.width),-10,"asteroid").setScale(0.07,0.07);
+        asteroid.setVelocityY(asteroidSpeed);
+    }else if(spawnPlace == 1){
+        asteroid = scene.physics.add.sprite(-10,Phaser.Math.Between(0,config.height),"asteroid").setScale(0.07,0.07);
+        asteroid.setVelocityX(asteroidSpeed);
+    }else if(spawnPlace == 2){
+        asteroid = scene.physics.add.sprite(config.width + 10,Phaser.Math.Between(0,config.height),"asteroid").setScale(0.07,0.07);
+        asteroid.setVelocityX(-asteroidSpeed);
+    }else if(spawnPlace == 3){
+        asteroid = scene.physics.add.sprite(Phaser.Math.Between(0,config.width),config.height + 10,"asteroid").setScale(0.07,0.07);
+        asteroid.setVelocityY(-asteroidSpeed);
+    }
+    asteroid.body.setBounce(1);
+    asteroidsGroup.add(asteroid);
 }
 
 function addBullet(scene,player){
@@ -99,6 +123,22 @@ function addBullet(scene,player){
     bulletOffsetY = Math.sin(spaceshipAngle)*(spaceshipWidth/2);
     
     bullet = scene.physics.add.sprite(player.x + bulletOffsetX,player.y + bulletOffsetY,"bullet").setScale(0.2,0.2);
+    //debug(scene);
+    bullet.body.setSize(50,50);
+    bullet.body.setOffset(300,300);
     bullet.rotation = player.rotation;
     bullet.setVelocity(Math.cos(player.rotation)*400,Math.sin(player.rotation)*400);
+    
+    scene.physics.add.collider(bullet,asteroidsGroup,(bullet,asteroid)=>{
+        explosion = scene.add.image(asteroid.x,asteroid.y,"explosion").setScale(0.1,0.1);
+        bullet.destroy();
+        asteroid.destroy();
+        scene.time.delayedCall(100,()=>{
+            explosion.destroy();
+        })
+    })
+}
+
+function debug(scene){
+    scene.physics.world.createDebugGraphic();
 }
