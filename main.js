@@ -25,15 +25,26 @@ function preload(){
     this.load.image("asteroid","assets/asteroid.png");
     this.load.image("explosion","assets/explosion.png");
     this.load.image("bullet","assets/bullet.png");
+    this.load.audio("background_music","assets/final-and-loop-piko-piko-electro-beat-20991.mp3");
+    this.load.audio("game_end","assets/negative_beeps-6008.mp3");
+    this.load.audio("blaster_sound","assets/blaster-2-81267.mp3");
+    this.load.audio("explosion_sound","assets/bad-explosion-6855.mp3");
 }
 
 
 function create(){
+    music = this.sound.add("background_music",{ loop:true, volume:0.5 });
+    explosion_sound = this.sound.add("explosion_sound",{volume:0.2});
+    game_end_sound = this.sound.add("game_end");
+    blaster_sound = this.sound.add("blaster_sound",{volume:0.2});
+    music.play();
     this.add.image(config.width/2,config.height/2,"space");
     player = this.physics.add.sprite(config.width/2,config.height-100,"spaceship").setScale(0.15,0.15);
     asteroidsGroup = this.add.group();
     canFire = true;
     asteroidSpeed = 80;
+    points = 0
+    text = this.add.text(10,10,"Score: "+ points ).setColor("yellow");
 
     player.body.collideWorldBounds = true;
     gameEnd = false;
@@ -51,6 +62,11 @@ function create(){
     this.physics.add.collider(player,asteroidsGroup,(player,asteroid)=>{
         asteroid.destroy();
         explosion = this.add.image(asteroid.x,asteroid.y,"explosion").setScale(0.07,0.07);
+        explosion_sound.play();
+        this.time.delayedCall(100,()=>{
+            game_end_sound.play();
+            music.stop();
+        })
         this.time.delayedCall(1000,()=>{
             explosion.destroy();
         })
@@ -80,7 +96,10 @@ function update(){
         if(Space.isDown && canFire){
             addBullet(this,player);
             canFire = false;
-            this.time.delayedCall(200,()=>{canFire = true});
+            this.time.delayedCall(200,()=>{
+                blaster_sound.play();
+                canFire = true;
+            });
         }
     }else{
             gameEnd = true;
@@ -130,14 +149,21 @@ function addBullet(scene,player){
     bullet.setVelocity(Math.cos(player.rotation)*400,Math.sin(player.rotation)*400);
     
     scene.physics.add.collider(bullet,asteroidsGroup,(bullet,asteroid)=>{
+        points += 1;
+        text.setText("Score: " + points);
         explosion = scene.add.image(asteroid.x,asteroid.y,"explosion").setScale(0.1,0.1);
         bullet.destroy();
         asteroid.destroy();
+
         scene.time.delayedCall(100,()=>{
-            explosion.destroy();
+            if(explosion && explosion.active){
+                explosion.destroy();
+                explosion_sound.play();
+            }
         })
-    })
+        })
 }
+
 
 function debug(scene){
     scene.physics.world.createDebugGraphic();
