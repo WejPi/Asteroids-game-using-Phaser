@@ -38,16 +38,18 @@ function create(){
     game_end_sound = this.sound.add("game_end");
     blaster_sound = this.sound.add("blaster_sound",{volume:0.2});
     music.play();
+
     this.add.image(config.width/2,config.height/2,"space");
     player = this.physics.add.sprite(config.width/2,config.height-100,"spaceship").setScale(0.15,0.15);
     asteroidsGroup = this.add.group();
+    
     canFire = true;
     asteroidSpeed = 80;
     points = 0
-    text = this.add.text(10,10,"Score: "+ points ).setColor("yellow");
-
     player.body.collideWorldBounds = true;
     gameEnd = false;
+
+    scoreText = this.add.text(10,10,"Score: "+ points ).setColor("yellow");
 
     keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
@@ -55,7 +57,7 @@ function create(){
     keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    setInterval(()=>{
+    spawnAsteroids = setInterval(()=>{
         addAsteroids(this);
     },1000);
 
@@ -102,9 +104,17 @@ function update(){
             });
         }
     }else{
-            gameEnd = true;
             this.add.image(player.x,player.y,"explosion").setScale(0.3,0.3);
             player.destroy();
+            music.stop();
+            this.physics.world.isPaused = true;
+            clearInterval(spawnAsteroids);
+            this.add.graphics().fillStyle("black").fillRect(0,0,config.width,config.height).setVisible(true);
+            this.add.text(config.width/2,config.height/2,"Game Over! Score:"+ points + ". Press space to play again!",{fontSize: "20px"}).setColor("yellow").setOrigin(0.5,0.5);
+            if(Space.isDown){
+                gameEnd = false;
+                this.scene.restart();
+            }
     }
 
     asteroidsGroup.getChildren().forEach((asteroid) => {
@@ -147,10 +157,18 @@ function addBullet(scene,player){
     bullet.body.setOffset(300,300);
     bullet.rotation = player.rotation;
     bullet.setVelocity(Math.cos(player.rotation)*400,Math.sin(player.rotation)*400);
+
+    bulletCreationTime = scene.time.now;
+    console.log(bulletCreationTime);
+
+    if((scene.time.now - bulletCreationTime) > 10){
+        console.log('juz');
+        bullet.destroy();
+    }
     
     scene.physics.add.collider(bullet,asteroidsGroup,(bullet,asteroid)=>{
         points += 1;
-        text.setText("Score: " + points);
+        scoreText.setText("Score: " + points);
         explosion = scene.add.image(asteroid.x,asteroid.y,"explosion").setScale(0.1,0.1);
         bullet.destroy();
         asteroid.destroy();
