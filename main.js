@@ -56,6 +56,7 @@ function create(){
     keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    Enter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
 
     spawnAsteroids = setInterval(()=>{
         addAsteroids(this);
@@ -78,7 +79,6 @@ function create(){
 
     this.cursors = this.input.keyboard.createCursorKeys();
 }
-
 
 
 function update(){
@@ -110,8 +110,8 @@ function update(){
             this.physics.world.isPaused = true;
             clearInterval(spawnAsteroids);
             this.add.graphics().fillStyle("black").fillRect(0,0,config.width,config.height).setVisible(true);
-            this.add.text(config.width/2,config.height/2,"Game Over! Score:"+ points + ". Press space to play again!",{fontSize: "20px"}).setColor("yellow").setOrigin(0.5,0.5);
-            if(Space.isDown){
+            this.add.text(config.width/2,config.height/2,"Game Over! Score:"+ points + ". Press Enter to play again!",{fontSize: "20px"}).setColor("yellow").setOrigin(0.5,0.5);
+            if(Enter.isDown){
                 gameEnd = false;
                 this.scene.restart();
             }
@@ -157,14 +157,6 @@ function addBullet(scene,player){
     bullet.body.setOffset(300,300);
     bullet.rotation = player.rotation;
     bullet.setVelocity(Math.cos(player.rotation)*400,Math.sin(player.rotation)*400);
-
-    bulletCreationTime = scene.time.now;
-    console.log(bulletCreationTime);
-
-    if((scene.time.now - bulletCreationTime) > 10){
-        console.log('juz');
-        bullet.destroy();
-    }
     
     scene.physics.add.collider(bullet,asteroidsGroup,(bullet,asteroid)=>{
         points += 1;
